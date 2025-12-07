@@ -71,67 +71,62 @@ jobs:
         run: |
           sudo apt-get update && sudo apt-get install -y python3
           if [ -f target/spotbugs/spotbugs.xml ]; then
-            # Convert SpotBugs XML to JSON for easier consumption
-            python3 << 'EOF'
-import xml.etree.ElementTree as ET
-import json
+            cat > /tmp/convert_spotbugs.py << 'PYEOF'
+          import xml.etree.ElementTree as ET
+          import json
 
-tree = ET.parse('target/spotbugs/spotbugs.xml')
-root = tree.getroot()
+          tree = ET.parse('target/spotbugs/spotbugs.xml')
+          root = tree.getroot()
 
-findings = []
-for bug in root.findall('.//BugInstance'):
-    finding = {
-        'type': bug.get('type', ''),
-        'priority': bug.get('priority', ''),
-        'rank': bug.get('rank', ''),
-        'category': bug.get('category', ''),
-        'abbrev': bug.get('abbrev', ''),
-        'message': ''
-    }
+          findings = []
+          for bug in root.findall('.//BugInstance'):
+              finding = {
+                  'type': bug.get('type', ''),
+                  'priority': bug.get('priority', ''),
+                  'rank': bug.get('rank', ''),
+                  'category': bug.get('category', ''),
+                  'abbrev': bug.get('abbrev', ''),
+                  'message': ''
+              }
 
-    # Get long message
-    long_msg = bug.find('LongMessage')
-    if long_msg is not None:
-        finding['message'] = long_msg.text or ''
+              long_msg = bug.find('LongMessage')
+              if long_msg is not None:
+                  finding['message'] = long_msg.text or ''
 
-    # Get short message if long message not found
-    if not finding['message']:
-        short_msg = bug.find('ShortMessage')
-        if short_msg is not None:
-            finding['message'] = short_msg.text or ''
+              if not finding['message']:
+                  short_msg = bug.find('ShortMessage')
+                  if short_msg is not None:
+                      finding['message'] = short_msg.text or ''
 
-    # Get source line information
-    source_lines = []
-    for sl in bug.findall('.//SourceLine'):
-        source_info = {
-            'classname': sl.get('classname', ''),
-            'sourcefile': sl.get('sourcefile', ''),
-            'sourcepath': sl.get('sourcepath', ''),
-            'start': sl.get('start', ''),
-            'end': sl.get('end', ''),
-        }
-        # Only add if it has useful info
-        if source_info['sourcefile'] or source_info['sourcepath']:
-            source_lines.append(source_info)
+              source_lines = []
+              for sl in bug.findall('.//SourceLine'):
+                  source_info = {
+                      'classname': sl.get('classname', ''),
+                      'sourcefile': sl.get('sourcefile', ''),
+                      'sourcepath': sl.get('sourcepath', ''),
+                      'start': sl.get('start', ''),
+                      'end': sl.get('end', ''),
+                  }
+                  if source_info['sourcefile'] or source_info['sourcepath']:
+                      source_lines.append(source_info)
 
-    if source_lines:
-        finding['sourceLines'] = source_lines
-        # Set convenience fields from primary source line
-        if source_lines[0]['sourcepath']:
-            finding['file'] = source_lines[0]['sourcepath']
-        elif source_lines[0]['sourcefile']:
-            finding['file'] = source_lines[0]['sourcefile']
-        finding['line'] = source_lines[0]['start']
+              if source_lines:
+                  finding['sourceLines'] = source_lines
+                  if source_lines[0]['sourcepath']:
+                      finding['file'] = source_lines[0]['sourcepath']
+                  elif source_lines[0]['sourcefile']:
+                      finding['file'] = source_lines[0]['sourcefile']
+                  finding['line'] = source_lines[0]['start']
 
-    findings.append(finding)
+              findings.append(finding)
 
-output = {'findings': findings, 'count': len(findings)}
-with open('security-reports/spotbugs-findsecbugs_converted.json', 'w') as f:
-    json.dump(output, f, indent=2)
+          output = {'findings': findings, 'count': len(findings)}
+          with open('security-reports/spotbugs-findsecbugs_converted.json', 'w') as f:
+              json.dump(output, f, indent=2)
 
-print(f"Converted {len(findings)} findings to JSON")
-EOF
+          print(f"Converted {len(findings)} findings to JSON")
+          PYEOF
+            python3 /tmp/convert_spotbugs.py
           else
             echo '{"findings": [], "count": 0, "note": "No SpotBugs XML output found"}' > security-reports/spotbugs-findsecbugs_converted.json
           fi
