@@ -36,3 +36,73 @@ jobs:
           name: vulnerable-jar-jdk-${{ matrix.java }}
           path: target/*.jar
           retention-days: 1
+
+  security-scan:
+    runs-on: ubuntu-latest
+    needs: build
+    name: Security Scanning
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Run SpotBugs + FindSecBugs
+        run: |
+          mvn -B clean compile spotbugs:spotbugs --file pom.xml
+          mkdir -p security-reports
+
+      - name: Convert SpotBugs XML to JSON
+        run: |
+          sudo apt-get update && sudo apt-get install -y jq xmlstarlet
+          if [ -f target/spotbugs/spotbugsXml.xml ]; then
+            xmlstarlet sel -t -m "//BugInstance" \
+              -o '{"type":"' -v '@type' -o '",' \
+              -o '"priority":"' -v '@priority' -o '",' \
+              -o '"category":"' -v '@category' -o '",' \
+              -o '"message":"' -v 'LongMessage' -o '",' \
+              -o '"file":"' -v 'SourceLine/@sourcepath' -o '",' \
+              -o '"line":"' -v 'SourceLine/@start' -o '"}' \
+              -n target/spotbugs/spotbugsXml.xml | \
+              jq -s '{"findings": .}' > security-reports/spotbugs-findsecbugs.json
+          else
+            echo '{"findings": [], "note": "No SpotBugs XML output found"}' > security-reports/spotbugs-findsecbugs.json
+          fi
+
+      - name: Run Semgrep - OWASP Top Ten
+        run: |
+          docker run --rm -v "${PWD}:/src" returntocorp/semgrep semgrep \
+            --config "p/owasp-top-ten" \
+            --json \
+            --output /src/security-reports/semgrep-owasp-top-ten.json \
+            /src || true
+
+      - name: Run Semgrep - Security Audit
+        run: |
+          docker run --rm -v "${PWD}:/src" returntocorp/semgrep semgrep \
+            --config "p/security-audit" \
+            --json \
+            --output /src/security-reports/semgrep-security-audit.json \
+            /src || true
+
+      - name: Run Semgrep - Java Security
+        run: |
+          docker run --rm -v "${PWD}:/src" returntocorp/semgrep semgrep \
+            --config "p/java.security" \
+            --json \
+            --output /src/security-reports/semgrep-java-security.json \
+            /src || true
+
+      - name: Upload Security Scan Results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: security-scan-results
+          path: security-reports/*.json
+          retention-days: 30
