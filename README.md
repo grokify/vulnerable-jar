@@ -1,35 +1,97 @@
 # Vulnerable JAR
 
-This project contains a deliberately vulnerable JAR file for security testing and vulnerability scanning purposes.
+This project contains deliberately vulnerable Java code covering the **OWASP Top 10 (2021)** for security testing, scanning, and educational purposes.
 
-## Vulnerability
+⚠️ **WARNING**: This contains intentionally insecure code. For testing purposes only. Do not use in production environments.
 
-This project uses **log4j-core version 2.14.1**, which is vulnerable to CVE-2021-44228 (Log4Shell).
+## Coverage
 
-⚠️ **WARNING**: This is for testing purposes only. Do not use in production environments.
+### OWASP Top 10 (2021)
 
-## Purpose
+This project includes vulnerability examples for all OWASP Top 10 categories:
 
-This project is intended for:
-- Testing vulnerability scanners
-- Security research and education
-- Validating dependency analysis tools
-- Demonstrating security vulnerabilities
+| Category | File | Vulnerabilities Demonstrated |
+|----------|------|------------------------------|
+| **A01** Broken Access Control | `A01_BrokenAccessControl.java` | Path traversal, IDOR, missing authorization checks |
+| **A02** Cryptographic Failures | `A02_CryptographicFailures.java` | Weak algorithms (DES, MD5, SHA-1), hardcoded keys, insecure random |
+| **A03** Injection | `A03_Injection.java` | SQL injection, command injection, XXE, LDAP injection |
+| **A04** Insecure Design | `A04_InsecureDesign.java` | No rate limiting, race conditions, missing validation |
+| **A05** Security Misconfiguration | `A05_SecurityMisconfiguration.java` | Disabled SSL validation, debug mode, default credentials |
+| **A06** Vulnerable Components | `A06_VulnerableComponents.java` | Log4j 2.14.1 (CVE-2021-44228 - Log4Shell) |
+| **A07** Identification Failures | `A07_IdentificationFailures.java` | Weak passwords, session fixation, username enumeration |
+| **A08** Software Integrity Failures | `A08_SoftwareDataIntegrityFailures.java` | Insecure deserialization, unsafe reflection |
+| **A09** Logging Failures | `A09_SecurityLoggingFailures.java` | Missing logs, logging sensitive data, log injection |
+| **A10** SSRF | `A10_SSRF.java` | Server-side request forgery, internal resource access |
+
+### Vulnerable Dependencies
+
+- **log4j-core 2.14.1** - Vulnerable to CVE-2021-44228 (Log4Shell), CVE-2021-45046, CVE-2021-45105
+
+## Security Scanning
+
+This project includes automated security scanning in CI/CD:
+
+### Tools Used
+
+1. **SpotBugs + FindSecBugs** - Static analysis for Java security bugs
+2. **Semgrep** - Pattern-based security scanning with:
+   - `p/owasp-top-ten` ruleset
+   - `p/security-audit` ruleset
+   - `p/java.security` ruleset
+
+### CI/CD Pipeline
+
+The GitHub Actions workflow (`.github/workflows/ci.yaml`) includes:
+- **Build job**: Compiles and packages the JAR across JDK versions 8, 11, 17, 21, 25
+- **Security scan job**: Runs all security scanners and produces JSON reports
+
+### Scan Results
+
+Security scan results are uploaded as GitHub Actions artifacts in JSON format:
+- `spotbugs-findsecbugs.json`
+- `semgrep-owasp-top-ten.json`
+- `semgrep-security-audit.json`
+- `semgrep-java-security.json`
+
+Artifacts are retained for 30 days and can be downloaded from the Actions tab.
 
 ## Building
 
 ```bash
-mvn package
+mvn clean package
 ```
 
 The JAR will be created at `target/vulnerable-jar-1.0-SNAPSHOT.jar`
 
-## Running
+## Running Security Scans Locally
 
+### SpotBugs + FindSecBugs
 ```bash
-java -jar target/vulnerable-jar-1.0-SNAPSHOT.jar
+mvn clean compile spotbugs:spotbugs
+# Results in: target/spotbugs/spotbugsXml.xml
 ```
+
+### Semgrep
+```bash
+# OWASP Top Ten
+semgrep --config "p/owasp-top-ten" --json --output results.json .
+
+# Security Audit
+semgrep --config "p/security-audit" --json --output results.json .
+
+# Java Security
+semgrep --config "p/java.security" --json --output results.json .
+```
+
+## Purpose
+
+This project is intended for:
+- Testing and validating security scanners (SAST tools)
+- Security research and education
+- Demonstrating OWASP Top 10 vulnerabilities
+- Training developers on secure coding practices
+- Benchmarking vulnerability detection tools
 
 ## Disclaimer
 
-This software is provided for educational and testing purposes only. Use responsibly and only in controlled environments.
+This software is provided for educational and testing purposes only. All vulnerabilities are intentional. Use responsibly and only in controlled environments. Do not deploy this code in any production system.
