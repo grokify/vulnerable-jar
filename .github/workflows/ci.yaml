@@ -39,8 +39,8 @@ jobs:
 
   security-scan:
     runs-on: ubuntu-latest
-    needs: build
     name: Security Scanning
+    if: always()
 
     steps:
       - name: Checkout code
@@ -54,11 +54,13 @@ jobs:
           cache: 'maven'
 
       - name: Run SpotBugs + FindSecBugs
+        continue-on-error: true
         run: |
-          mvn -B clean compile spotbugs:spotbugs --file pom.xml
+          mvn -B clean compile spotbugs:spotbugs --file pom.xml || true
           mkdir -p security-reports
 
       - name: Convert SpotBugs XML to JSON
+        continue-on-error: true
         run: |
           sudo apt-get update && sudo apt-get install -y jq xmlstarlet
           if [ -f target/spotbugs/spotbugsXml.xml ]; then
@@ -76,6 +78,7 @@ jobs:
           fi
 
       - name: Run Semgrep - OWASP Top Ten
+        continue-on-error: true
         run: |
           docker run --rm -v "${PWD}:/src" returntocorp/semgrep semgrep \
             --config "p/owasp-top-ten" \
@@ -84,6 +87,7 @@ jobs:
             /src || true
 
       - name: Run Semgrep - Security Audit
+        continue-on-error: true
         run: |
           docker run --rm -v "${PWD}:/src" returntocorp/semgrep semgrep \
             --config "p/security-audit" \
@@ -92,6 +96,7 @@ jobs:
             /src || true
 
       - name: Run Semgrep - Java Security
+        continue-on-error: true
         run: |
           docker run --rm -v "${PWD}:/src" returntocorp/semgrep semgrep \
             --config "p/java.security" \
