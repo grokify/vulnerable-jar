@@ -63,7 +63,7 @@ jobs:
         continue-on-error: true
         run: |
           sudo apt-get update && sudo apt-get install -y jq xmlstarlet
-          if [ -f target/spotbugs/spotbugsXml.xml ]; then
+          if [ -f target/spotbugs/spotbugs.xml ]; then
             xmlstarlet sel -t -m "//BugInstance" \
               -o '{"type":"' -v '@type' -o '",' \
               -o '"priority":"' -v '@priority' -o '",' \
@@ -71,7 +71,7 @@ jobs:
               -o '"message":"' -v 'LongMessage' -o '",' \
               -o '"file":"' -v 'SourceLine/@sourcepath' -o '",' \
               -o '"line":"' -v 'SourceLine/@start' -o '"}' \
-              -n target/spotbugs/spotbugsXml.xml | \
+              -n target/spotbugs/spotbugs.xml | \
               jq -s '{"findings": .}' > security-reports/spotbugs-findsecbugs.json
           else
             echo '{"findings": [], "note": "No SpotBugs XML output found"}' > security-reports/spotbugs-findsecbugs.json

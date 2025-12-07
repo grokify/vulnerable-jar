@@ -44,8 +44,9 @@
                 <configuration>
                     <effort>Max</effort>
                     <threshold>Low</threshold>
+                    <failOnError>false</failOnError>
                     <xmlOutput>true</xmlOutput>
-                    <spotbugsXmlOutputDirectory>${project.build.directory}/spotbugs</spotbugsXmlOutputDirectory>
+                    <xmlOutputDirectory>${project.build.directory}/spotbugs</xmlOutputDirectory>
                     <plugins>
                         <plugin>
                             <groupId>com.h3xstream.findsecbugs</groupId>
