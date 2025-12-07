@@ -95,13 +95,13 @@ jobs:
             --output /src/security-reports/semgrep-security-audit.json \
             /src || true
 
-      - name: Run Semgrep - Java Security
+      - name: Run Semgrep - Java
         continue-on-error: true
         run: |
           docker run --rm -v "${PWD}:/src" returntocorp/semgrep semgrep \
-            --config "p/java.security" \
+            --config "p/java" \
             --json \
-            --output /src/security-reports/semgrep-java-security.json \
+            --output /src/security-reports/semgrep-java.json \
             /src || true
 
       - name: Upload Security Scan Results

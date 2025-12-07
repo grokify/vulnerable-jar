@@ -37,7 +37,7 @@ This project includes automated security scanning in CI/CD:
 2. **Semgrep** - Pattern-based security scanning with:
    - `p/owasp-top-ten` ruleset
    - `p/security-audit` ruleset
-   - `p/java.security` ruleset
+   - `p/java` ruleset
 
 ### CI/CD Pipeline
 
@@ -51,7 +51,7 @@ Security scan results are uploaded as GitHub Actions artifacts in JSON format:
 - `spotbugs-findsecbugs.json`
 - `semgrep-owasp-top-ten.json`
 - `semgrep-security-audit.json`
-- `semgrep-java-security.json`
+- `semgrep-java.json`
 
 Artifacts are retained for 30 days and can be downloaded from the Actions tab.
 
@@ -79,8 +79,8 @@ semgrep --config "p/owasp-top-ten" --json --output results.json .
 # Security Audit
 semgrep --config "p/security-audit" --json --output results.json .
 
-# Java Security
-semgrep --config "p/java.security" --json --output results.json .
+# Java
+semgrep --config "p/java" --json --output results.json .
 ```
 
 ## Purpose
