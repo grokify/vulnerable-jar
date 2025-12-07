@@ -99,6 +99,14 @@ This project is intended for:
 - Training developers on secure coding practices
 - Benchmarking vulnerability detection tools
 
+## Related Projects
+
+Other vulnerable applications for security testing and training:
+
+- **[OWASP Vulnerable Web Application](https://github.com/OWASP/Vulnerable-Web-Application)** - Collection of vulnerable web applications for learning
+- **[DataDog Vulnerable Java Application](https://github.com/DataDog/vulnerable-java-application)** - Java application with various security vulnerabilities
+- **[SasanLabs VulnerableApp](https://github.com/SasanLabs/VulnerableApp)** - Web application with OWASP Top 10 vulnerabilities
+
 ## Disclaimer
 
 This software is provided for educational and testing purposes only. All vulnerabilities are intentional. Use responsibly and only in controlled environments. Do not deploy this code in any production system.
