@@ -47,13 +47,20 @@ The GitHub Actions workflow (`.github/workflows/ci.yaml`) includes:
 
 ### Scan Results
 
-Security scan results are uploaded as GitHub Actions artifacts in JSON format:
-- `spotbugs-findsecbugs.json`
-- `semgrep-owasp-top-ten.json`
-- `semgrep-security-audit.json`
-- `semgrep-java.json`
+Security scan results are uploaded as GitHub Actions artifacts with consistent naming:
+
+**Pattern:** `{tool}_{format}.{ext}`
+
+**Files:**
+- `spotbugs-findsecbugs_raw.xml` - Original SpotBugs XML output
+- `spotbugs-findsecbugs_converted.json` - Converted with file/line extraction
+- `semgrep-owasp-top-ten.json` - Native Semgrep JSON output
+- `semgrep-security-audit.json` - Native Semgrep JSON output
+- `semgrep-java.json` - Native Semgrep JSON output
 
 Artifacts are retained for 30 days and can be downloaded from the Actions tab.
+
+**Why conversion?** SpotBugs XML is converted to JSON to extract and structure findings with file paths, line numbers, priority, category, and messages in an easily parseable format. Both raw and converted formats are provided.
 
 ## Building
 
