@@ -142,6 +142,83 @@ jobs:
             --output /src/security-reports/semgrep.json \
             /src || true
 
+      - name: Set up Go for govex
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.23'
+
+      - name: Convert and merge results with govex
+        continue-on-error: true
+        run: |
+          # Install govex
+          go install github.com/grokify/govex/cmd/govex@v0.16.0
+
+          # Create Go program to process and merge results
+          cat > /tmp/merge_results.go << 'GOEOF'
+          package main
+
+          import (
+          	"fmt"
+          	"os"
+
+          	"github.com/grokify/govex"
+          	"github.com/grokify/govex/analyzers/semgrep"
+          	"github.com/grokify/govex/analyzers/spotbugs"
+          )
+
+          func main() {
+          	var allVulns govex.Vulnerabilities
+
+          	// Process SpotBugs results
+          	if _, err := os.Stat("target/spotbugs/spotbugs.xml"); err == nil {
+          		bugCollection, err := spotbugs.ParseBugCollectionFromFile("target/spotbugs/spotbugs.xml")
+          		if err != nil {
+          			fmt.Fprintf(os.Stderr, "Error parsing SpotBugs: %v\n", err)
+          		} else {
+          			spotbugsVulns := bugCollection.ToGovexVulnerabilities()
+          			allVulns = append(allVulns, spotbugsVulns...)
+          			fmt.Printf("Added %d SpotBugs findings\n", len(spotbugsVulns))
+          		}
+          	} else {
+          		fmt.Println("No SpotBugs results found")
+          	}
+
+          	// Process Semgrep results
+          	if _, err := os.Stat("security-reports/semgrep.json"); err == nil {
+          		semgrepOutput, err := semgrep.ParseJSONFromFile("security-reports/semgrep.json")
+          		if err != nil {
+          			fmt.Fprintf(os.Stderr, "Error parsing Semgrep: %v\n", err)
+          		} else {
+          			semgrepVulns := semgrepOutput.ToGovexVulnerabilities()
+          			allVulns = append(allVulns, semgrepVulns...)
+          			fmt.Printf("Added %d Semgrep findings\n", len(semgrepVulns))
+          		}
+          	} else {
+          		fmt.Println("No Semgrep results found")
+          	}
+
+          	// Export to table and XLSX
+          	if len(allVulns) > 0 {
+          		table := allVulns.Table(govex.TableColumnDefinitionSetSASTSCAReport(), nil)
+          		err := table.WriteXLSX("security-reports/combined-findings.xlsx", "Findings")
+          		if err != nil {
+          			fmt.Fprintf(os.Stderr, "Error writing XLSX: %v\n", err)
+          			os.Exit(1)
+          		}
+          		fmt.Printf("Successfully wrote %d findings to XLSX\n", len(allVulns))
+          	} else {
+          		fmt.Println("No findings to export")
+          	}
+          }
+          GOEOF
+
+          # Initialize Go module and run
+          cd /tmp
+          go mod init merge_results
+          go get github.com/grokify/govex@v0.16.0
+          cd -
+          go run /tmp/merge_results.go
+
       - name: Upload Security Scan Results
         uses: actions/upload-artifact@v4
         if: always()
@@ -150,4 +227,5 @@ jobs:
           path: |
             security-reports/*.json
             security-reports/*.xml
+            security-reports/*.xlsx
           retention-days: 30
