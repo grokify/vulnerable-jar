@@ -54,13 +54,12 @@ Security scan results are uploaded as GitHub Actions artifacts with consistent n
 **Files:**
 - `spotbugs-findsecbugs_raw.xml` - Original SpotBugs XML output
 - `spotbugs-findsecbugs_converted.json` - Converted with file/line extraction
-- `semgrep-owasp-top-ten.json` - Native Semgrep JSON output
-- `semgrep-security-audit.json` - Native Semgrep JSON output
-- `semgrep-java.json` - Native Semgrep JSON output
+- `semgrep.json` - Combined Semgrep JSON output (OWASP Top Ten, Security Audit, and Java rulesets)
+- `combined-findings.xlsx` - Govex-generated Excel file merging SpotBugs and Semgrep findings
 
 Artifacts are retained for 30 days and can be downloaded from the Actions tab.
 
-**Why conversion?** SpotBugs XML is converted to JSON to extract and structure findings with file paths, line numbers, priority, category, and messages in an easily parseable format. Both raw and converted formats are provided.
+**Why conversion?** SpotBugs XML is converted to JSON to extract and structure findings with file paths, line numbers, priority, category, and messages in an easily parseable format. The Govex XLSX file provides a unified view of all findings from both tools for easier analysis and reporting.
 
 ## Building
 
