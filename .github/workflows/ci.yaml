@@ -145,16 +145,21 @@ jobs:
       - name: Set up Go for govex
         uses: actions/setup-go@v5
         with:
-          go-version: '1.23'
+          go-version: '1.24'
 
       - name: Convert and merge results with govex
         continue-on-error: true
         run: |
-          # Install govex
-          go install github.com/grokify/govex/cmd/govex@v0.16.0
+          # Create temporary directory for Go program
+          mkdir -p /tmp/merge_results
+          cd /tmp/merge_results
+
+          # Initialize Go module
+          go mod init merge_results
+          go get github.com/grokify/govex@v0.16.0
 
           # Create Go program to process and merge results
-          cat > /tmp/merge_results.go << 'GOEOF'
+          cat > main.go << 'GOEOF'
           package main
 
           import (
@@ -212,12 +217,9 @@ jobs:
           }
           GOEOF
 
-          # Initialize Go module and run
-          cd /tmp
-          go mod init merge_results
-          go get github.com/grokify/govex@v0.16.0
-          cd -
-          go run /tmp/merge_results.go
+          # Change back to workspace and run
+          cd "${GITHUB_WORKSPACE}"
+          go run /tmp/merge_results/main.go
 
       - name: Upload Security Scan Results
         uses: actions/upload-artifact@v4
