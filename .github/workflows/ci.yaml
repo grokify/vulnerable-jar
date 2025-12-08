@@ -165,6 +165,7 @@ jobs:
           import (
           	"fmt"
           	"os"
+          	"path/filepath"
 
           	"github.com/grokify/govex"
           	"github.com/grokify/govex/analyzers/semgrep"
@@ -172,11 +173,18 @@ jobs:
           )
 
           func main() {
+          	// Get workspace directory from environment
+          	workspace := os.Getenv("GITHUB_WORKSPACE")
+          	if workspace == "" {
+          		workspace = "."
+          	}
+
           	var allVulns govex.Vulnerabilities
 
           	// Process SpotBugs results
-          	if _, err := os.Stat("target/spotbugs/spotbugs.xml"); err == nil {
-          		bugCollection, err := spotbugs.ParseBugCollectionFromFile("target/spotbugs/spotbugs.xml")
+          	spotbugsPath := filepath.Join(workspace, "target/spotbugs/spotbugs.xml")
+          	if _, err := os.Stat(spotbugsPath); err == nil {
+          		bugCollection, err := spotbugs.ParseBugCollectionFromFile(spotbugsPath)
           		if err != nil {
           			fmt.Fprintf(os.Stderr, "Error parsing SpotBugs: %v\n", err)
           		} else {
@@ -189,8 +197,9 @@ jobs:
           	}
 
           	// Process Semgrep results
-          	if _, err := os.Stat("security-reports/semgrep.json"); err == nil {
-          		semgrepOutput, err := semgrep.ParseJSONFromFile("security-reports/semgrep.json")
+          	semgrepPath := filepath.Join(workspace, "security-reports/semgrep.json")
+          	if _, err := os.Stat(semgrepPath); err == nil {
+          		semgrepOutput, err := semgrep.ParseJSONFromFile(semgrepPath)
           		if err != nil {
           			fmt.Fprintf(os.Stderr, "Error parsing Semgrep: %v\n", err)
           		} else {
@@ -205,7 +214,8 @@ jobs:
           	// Export to table and XLSX
           	if len(allVulns) > 0 {
           		table := allVulns.Table(govex.TableColumnDefinitionSetSASTSCAReport(), nil)
-          		err := table.WriteXLSX("security-reports/combined-findings.xlsx", "Findings")
+          		xlsxPath := filepath.Join(workspace, "security-reports/combined-findings.xlsx")
+          		err := table.WriteXLSX(xlsxPath, "Findings")
           		if err != nil {
           			fmt.Fprintf(os.Stderr, "Error writing XLSX: %v\n", err)
           			os.Exit(1)
@@ -217,9 +227,8 @@ jobs:
           }
           GOEOF
 
-          # Change back to workspace and run
-          cd "${GITHUB_WORKSPACE}"
-          go run /tmp/merge_results/main.go
+          # Run the program from the module directory
+          go run main.go
 
       - name: Upload Security Scan Results
         uses: actions/upload-artifact@v4
