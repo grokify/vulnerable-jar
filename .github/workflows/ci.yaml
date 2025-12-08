@@ -188,9 +188,13 @@ jobs:
           		if err != nil {
           			fmt.Fprintf(os.Stderr, "Error parsing SpotBugs: %v\n", err)
           		} else {
-          			spotbugsVulns := bugCollection.ToGovexVulnerabilities()
-          			allVulns = append(allVulns, spotbugsVulns...)
-          			fmt.Printf("Added %d SpotBugs findings\n", len(spotbugsVulns))
+          			spotbugsVulns, err := bugCollection.ToGovexVulnerabilities(true)
+                if err!=nil{
+          			  fmt.Fprintf(os.Stderr, "Error converting SpotBugs to Govex: %v\n", err)
+                } else {
+          			  allVulns = append(allVulns, spotbugsVulns...)
+          			  fmt.Printf("Added %d SpotBugs findings\n", len(spotbugsVulns))
+                }
           		}
           	} else {
           		fmt.Println("No SpotBugs results found")
@@ -203,9 +207,13 @@ jobs:
           		if err != nil {
           			fmt.Fprintf(os.Stderr, "Error parsing Semgrep: %v\n", err)
           		} else {
-          			semgrepVulns := semgrepOutput.ToGovexVulnerabilities()
-          			allVulns = append(allVulns, semgrepVulns...)
-          			fmt.Printf("Added %d Semgrep findings\n", len(semgrepVulns))
+          			semgrepVulns,err := semgrepOutput.ToGovexVulnerabilities()
+                if err!=nil {
+          			  fmt.Fprintf(os.Stderr, "Error converting Semgrep to Govex: %v\n", err)
+                } else {
+            			allVulns = append(allVulns, semgrepVulns...)
+            			fmt.Printf("Added %d Semgrep findings\n", len(semgrepVulns))
+                }
           		}
           	} else {
           		fmt.Println("No Semgrep results found")
@@ -213,14 +221,18 @@ jobs:
 
           	// Export to table and XLSX
           	if len(allVulns) > 0 {
-          		table := allVulns.Table(govex.TableColumnDefinitionSetSASTSCAReport(), nil)
-          		xlsxPath := filepath.Join(workspace, "security-reports/combined-findings.xlsx")
-          		err := table.WriteXLSX(xlsxPath, "Findings")
-          		if err != nil {
-          			fmt.Fprintf(os.Stderr, "Error writing XLSX: %v\n", err)
-          			os.Exit(1)
-          		}
-          		fmt.Printf("Successfully wrote %d findings to XLSX\n", len(allVulns))
+          		table, err := allVulns.Table(govex.TableColumnDefinitionSetSASTSCAReport(), nil)
+          		if err != nil{
+          			fmt.Fprintf(os.Stderr, "Error converting govex.Vulnerabilities to table: %v\n", err)
+              } else {
+                xlsxPath := filepath.Join(workspace, "security-reports/combined-findings.xlsx")
+          		  err := table.WriteXLSX(xlsxPath, "Findings")
+          		  if err != nil {
+          			  fmt.Fprintf(os.Stderr, "Error writing XLSX: %v\n", err)
+          			  os.Exit(1)
+          		  }
+          		  fmt.Printf("Successfully wrote %d findings to XLSX\n", len(allVulns))
+              }
           	} else {
           		fmt.Println("No findings to export")
           	}
