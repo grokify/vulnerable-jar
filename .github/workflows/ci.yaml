@@ -131,31 +131,15 @@ jobs:
             echo '{"findings": [], "count": 0, "note": "No SpotBugs XML output found"}' > security-reports/spotbugs-findsecbugs_converted.json
           fi
 
-      - name: Run Semgrep - OWASP Top Ten
+      - name: Run Semgrep
         continue-on-error: true
         run: |
           docker run --rm -v "${PWD}:/src" returntocorp/semgrep semgrep \
             --config "p/owasp-top-ten" \
-            --json \
-            --output /src/security-reports/semgrep-owasp-top-ten.json \
-            /src || true
-
-      - name: Run Semgrep - Security Audit
-        continue-on-error: true
-        run: |
-          docker run --rm -v "${PWD}:/src" returntocorp/semgrep semgrep \
             --config "p/security-audit" \
-            --json \
-            --output /src/security-reports/semgrep-security-audit.json \
-            /src || true
-
-      - name: Run Semgrep - Java
-        continue-on-error: true
-        run: |
-          docker run --rm -v "${PWD}:/src" returntocorp/semgrep semgrep \
             --config "p/java" \
             --json \
-            --output /src/security-reports/semgrep-java.json \
+            --output /src/security-reports/semgrep.json \
             /src || true
 
       - name: Upload Security Scan Results
